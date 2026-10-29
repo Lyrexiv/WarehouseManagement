@@ -1,0 +1,45 @@
+﻿version: '3.8'
+
+services:
+  wms-api:
+    build:
+      context: .
+      dockerfile: src/WarehouseManagement.API/Dockerfile
+    container_name: wms-api
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=WarehouseManagementDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;
+      - Jwt__Key=YourSuperSecretKeyThatIsAtLeast32CharactersLong!WMS2025
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    networks:
+      - wms-network
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: wms-sqlserver
+    ports:
+      - "1433:1433"
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourStrong@Passw0rd
+      - MSSQL_PID=Express
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    healthcheck:
+      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "YourStrong@Passw0rd" -Q "SELECT 1" -b -o /dev/null
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    networks:
+      - wms-network
+
+volumes:
+  sqlserver_data:
+
+networks:
+  wms-network:
+    driver: bridge
