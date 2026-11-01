@@ -12,7 +12,11 @@ public class ApplicationDbContextFactory
             new DbContextOptionsBuilder<ApplicationDbContext>();
 
         optionsBuilder.UseSqlServer(
-            @" ""Server=...;User Id=...;Password=...""");
+            @"Data Source=DESKTOP-CLJC02\TRUNGLE;
+              Initial Catalog=WarehouseManagementDb;
+              Integrated Security=True;
+              TrustServerCertificate=True;
+              Connection Timeout=180");
 
         return new ApplicationDbContext(optionsBuilder.Options);
     }

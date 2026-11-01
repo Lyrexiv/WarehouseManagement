@@ -1,20 +1,37 @@
-﻿using FluentValidation;
+﻿using AutoMapper;
+using FluentValidation;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using WarehouseManagement.Application.Common.Behaviors;
+using WarehouseManagement.Application.Common.Mappings;
 
 namespace WarehouseManagement.Application;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddApplication(this IServiceCollection services)
+    public static IServiceCollection AddApplication(
+        this IServiceCollection services)
     {
         var assembly = typeof(DependencyInjection).Assembly;
-        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(assembly));
+
+        services.AddMediatR(cfg =>
+            cfg.RegisterServicesFromAssembly(assembly));
+
         services.AddValidatorsFromAssembly(assembly);
-        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
-        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
-        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(PerformanceBehavior<,>));
+
+        services.AddAutoMapper(
+            cfg => { },
+            typeof(DependencyInjection).Assembly);
+
+        services.AddTransient(typeof(IPipelineBehavior<,>),
+            typeof(ValidationBehavior<,>));
+
+        services.AddTransient(typeof(IPipelineBehavior<,>),
+            typeof(LoggingBehavior<,>));
+
+        services.AddTransient(typeof(IPipelineBehavior<,>),
+            typeof(PerformanceBehavior<,>));
+
         return services;
     }
 }

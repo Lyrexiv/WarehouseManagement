@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using WarehouseManagement.Application.Features.Suppliers;
+using WarehouseManagement.Application.Features.Suppliers.DTOs;
+using WarehouseManagement.Application.Features.Suppliers.Commands;
+using WarehouseManagement.Application.Features.Suppliers.Queries;
 
 namespace WarehouseManagement.API.Controllers;
 

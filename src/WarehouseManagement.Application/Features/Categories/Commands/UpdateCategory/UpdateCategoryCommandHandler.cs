@@ -1,62 +1,52 @@
-﻿using MediatR;
-using WarehouseManagement.Application.Common.Interfaces;
-using WarehouseManagement.Application.Features.Categories.Commands.UpdateCategory;
+﻿using AutoMapper;
+using MediatR;
 using WarehouseManagement.Application.Features.Categories.DTOs;
 using WarehouseManagement.Domain.Exceptions;
 using WarehouseManagement.Domain.Interfaces;
 
-namespace WarehouseManagement.Application.Features.Categories.Commands;
+namespace WarehouseManagement.Application.Features.Categories.Commands.UpdateCategory;
 
 public class UpdateCategoryCommandHandler
-    : IRequestHandler<
-        UpdateCategoryCommand,
-        CategoryDto>
+    : IRequestHandler<UpdateCategoryCommand, CategoryDto>
 {
     private readonly IUnitOfWork _uow;
+    private readonly IMapper _mapper;
 
     public UpdateCategoryCommandHandler(
-        IUnitOfWork uow)
+        IUnitOfWork uow,
+        IMapper mapper)
     {
         _uow = uow;
+        _mapper = mapper;
     }
 
     public async Task<CategoryDto> Handle(
         UpdateCategoryCommand req,
         CancellationToken ct)
     {
-        var c =
-            await _uow.Categories
-                .GetByIdAsync(req.Id, ct)
-            ?? throw new NotFoundException(
-                "Category",
-                req.Id);
+        var category = await _uow.Categories.GetByIdAsync(
+            req.Id, ct)
+            ?? throw new NotFoundException("Category", req.Id);
 
-        if (await _uow.Categories
-            .NameExistsAsync(
-                req.Dto.Name,
-                req.Id,
-                ct))
+        // Check duplicate name
+        if (await _uow.Categories.NameExistsAsync(
+            req.Dto.Name,
+            req.Id,
+            ct))
         {
             throw new BusinessException(
                 $"Category name '{req.Dto.Name}' already taken");
         }
 
-        c.Name = req.Dto.Name;
-        c.Description = req.Dto.Description;
-        c.Code = req.Dto.Code;
-        c.IsActive = req.Dto.IsActive;
-        c.UpdatedAt = DateTime.UtcNow;
+        // Mapping DTO -> existing Entity
+        _mapper.Map(req.Dto, category);
 
-        await _uow.Categories.UpdateAsync(c, ct);
+        category.UpdatedAt = DateTime.UtcNow;
+
+        await _uow.Categories.UpdateAsync(category, ct);
 
         await _uow.SaveChangesAsync(ct);
 
-        return new CategoryDto(
-            c.Id,
-            c.Name,
-            c.Description,
-            c.Code,
-            c.IsActive,
-            c.CreatedAt);
+        return _mapper.Map<CategoryDto>(category);
     }
 }

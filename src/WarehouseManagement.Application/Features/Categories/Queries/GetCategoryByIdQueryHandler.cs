@@ -1,5 +1,5 @@
-﻿using MediatR;
-using WarehouseManagement.Application.Common.Interfaces;
+﻿using AutoMapper;
+using MediatR;
 using WarehouseManagement.Application.Features.Categories.DTOs;
 using WarehouseManagement.Domain.Exceptions;
 using WarehouseManagement.Domain.Interfaces;
@@ -7,35 +7,27 @@ using WarehouseManagement.Domain.Interfaces;
 namespace WarehouseManagement.Application.Features.Categories.Queries;
 
 public class GetCategoryByIdQueryHandler
-    : IRequestHandler<
-        GetCategoryByIdQuery,
-        CategoryDto>
+    : IRequestHandler<GetCategoryByIdQuery, CategoryDto>
 {
     private readonly IUnitOfWork _uow;
+    private readonly IMapper _mapper;
 
     public GetCategoryByIdQueryHandler(
-        IUnitOfWork uow)
+        IUnitOfWork uow,
+        IMapper mapper)
     {
         _uow = uow;
+        _mapper = mapper;
     }
 
     public async Task<CategoryDto> Handle(
         GetCategoryByIdQuery req,
         CancellationToken ct)
     {
-        var c =
-            await _uow.Categories
-                .GetByIdAsync(req.Id, ct)
-            ?? throw new NotFoundException(
-                "Category",
-                req.Id);
+        var category = await _uow.Categories.GetByIdAsync(
+            req.Id, ct)
+            ?? throw new NotFoundException("Category", req.Id);
 
-        return new CategoryDto(
-            c.Id,
-            c.Name,
-            c.Description,
-            c.Code,
-            c.IsActive,
-            c.CreatedAt);
+        return _mapper.Map<CategoryDto>(category);
     }
 }

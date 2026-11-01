@@ -1,56 +1,48 @@
-﻿using MediatR;
-using WarehouseManagement.Application.Common.Interfaces;
+﻿using AutoMapper;
+using MediatR;
 using WarehouseManagement.Application.Features.Categories.DTOs;
+using WarehouseManagement.Domain.Entities;
 using WarehouseManagement.Domain.Exceptions;
 using WarehouseManagement.Domain.Interfaces;
 
 namespace WarehouseManagement.Application.Features.Categories.Commands.CreateCategory;
 
 public class CreateCategoryCommandHandler
-    : IRequestHandler<
-        CreateCategoryCommand,
-        CategoryDto>
+    : IRequestHandler<CreateCategoryCommand, CategoryDto>
 {
     private readonly IUnitOfWork _uow;
+    private readonly IMapper _mapper;
 
     public CreateCategoryCommandHandler(
-        IUnitOfWork uow)
+        IUnitOfWork uow,
+        IMapper mapper)
     {
         _uow = uow;
+        _mapper = mapper;
     }
 
     public async Task<CategoryDto> Handle(
         CreateCategoryCommand req,
         CancellationToken ct)
     {
-        if (await _uow.Categories
-            .NameExistsAsync(
-                req.Dto.Name,
-                null,
-                ct))
+        // Check duplicate category name
+        if (await _uow.Categories.NameExistsAsync(
+            req.Dto.Name,
+            null,
+            ct))
         {
             throw new BusinessException(
                 $"Category '{req.Dto.Name}' already exists");
         }
 
-        var c =
-            new Domain.Entities.Category
-            {
-                Name = req.Dto.Name,
-                Description = req.Dto.Description,
-                Code = req.Dto.Code
-            };
+        // Mapping DTO -> Entity
+        var category = _mapper.Map<Category>(req.Dto);
 
-        await _uow.Categories.AddAsync(c, ct);
+        await _uow.Categories.AddAsync(category, ct);
 
         await _uow.SaveChangesAsync(ct);
 
-        return new CategoryDto(
-            c.Id,
-            c.Name,
-            c.Description,
-            c.Code,
-            c.IsActive,
-            c.CreatedAt);
+        // Mapping Entity -> DTO
+        return _mapper.Map<CategoryDto>(category);
     }
 }

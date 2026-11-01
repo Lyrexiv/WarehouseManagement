@@ -1,39 +1,34 @@
-﻿using MediatR;
-using WarehouseManagement.Application.Common.Interfaces;
+﻿using AutoMapper;
+using MediatR;
 using WarehouseManagement.Application.Features.Categories.DTOs;
 using WarehouseManagement.Domain.Interfaces;
 
 namespace WarehouseManagement.Application.Features.Categories.Queries;
 
 public class GetAllCategoriesQueryHandler
-    : IRequestHandler<
-        GetAllCategoriesQuery,
-        IEnumerable<CategoryDto>>
+    : IRequestHandler<GetAllCategoriesQuery, IEnumerable<CategoryDto>>
 {
     private readonly IUnitOfWork _uow;
+    private readonly IMapper _mapper;
 
     public GetAllCategoriesQueryHandler(
-        IUnitOfWork uow)
+        IUnitOfWork uow,
+        IMapper mapper)
     {
         _uow = uow;
+        _mapper = mapper;
     }
 
     public async Task<IEnumerable<CategoryDto>> Handle(
         GetAllCategoriesQuery req,
         CancellationToken ct)
     {
-        var all =
-            await _uow.Categories.GetAllAsync(ct);
+        var categories = await _uow.Categories.GetAllAsync(ct);
 
-        return all
+        var activeCategories = categories
             .Where(c => !c.IsDeleted)
-            .Select(c =>
-                new CategoryDto(
-                    c.Id,
-                    c.Name,
-                    c.Description,
-                    c.Code,
-                    c.IsActive,
-                    c.CreatedAt));
+            .ToList();
+
+        return _mapper.Map<List<CategoryDto>>(activeCategories);
     }
 }
